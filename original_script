@@ -1,0 +1,97 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+# 📁 Dossier d'export
+output_dir = "agrox_outputs"
+os.makedirs(output_dir, exist_ok=True)
+
+# 📥 Chargement des données
+df = pd.read_csv("C:/Users/X/Downloads/ventes_agroalimentaire_benin.csv")
+df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
+df.dropna(subset=["Date"], inplace=True)
+
+# 💸 Colonnes utiles
+df['Mois'] = df['Date'].dt.to_period('M')
+
+# 1️⃣ Ventes totales par produit
+ventes_par_produit = df.groupby("Produit")["Montant Total (XOF)"].sum().sort_values(ascending=False)
+plt.figure(figsize=(10, 5))
+sns.barplot(
+    x=ventes_par_produit.values,
+    y=ventes_par_produit.index,
+    hue=ventes_par_produit.index,
+    dodge=False,
+    palette="viridis",
+    legend=False
+)
+plt.xlabel("Ventes Totales (XOF)")
+plt.ylabel("Produits")
+plt.title("Ventes totales par produit")
+plt.tight_layout()
+plt.savefig(f"{output_dir}/ventes_par_produit.png")
+plt.show()
+
+# 2️⃣ Répartition des ventes par région
+ventes_par_region = df.groupby("Région")["Montant Total (XOF)"].sum().sort_values(ascending=False)
+plt.figure(figsize=(10, 5))
+sns.barplot(
+    x=ventes_par_region.values,
+    y=ventes_par_region.index,
+    hue=ventes_par_region.index,
+    dodge=False,
+    palette="magma",
+    legend=False
+)
+plt.xlabel("Ventes Totales (XOF)")
+plt.ylabel("Régions")
+plt.title("Ventes totales par région")
+plt.tight_layout()
+plt.savefig(f"{output_dir}/ventes_par_region.png")
+plt.show()
+
+# 3️⃣ Évolution quotidienne des ventes
+ventes_par_date = df.groupby("Date")["Montant Total (XOF)"].sum()
+plt.figure(figsize=(12, 5))
+plt.plot(ventes_par_date.index, ventes_par_date.values, marker='o')
+plt.xlabel("Date")
+plt.ylabel("Ventes Totales (XOF)")
+plt.title("Évolution quotidienne des ventes")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/evolution_quotidienne.png")
+plt.show()
+
+# 4️⃣ Évolution mensuelle
+ventes_mensuelles = df.groupby("Mois")["Montant Total (XOF)"].sum()
+plt.figure(figsize=(12, 5))
+ventes_mensuelles.plot(kind="bar", color="skyblue")
+plt.ylabel("Ventes Totales (XOF)")
+plt.xlabel("Mois")
+plt.title("Évolution mensuelle des ventes")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/evolution_mensuelle.png")
+plt.show()
+
+# 5️⃣ Répartition par canal de distribution (si dispo)
+if "Canal de Distribution" in df.columns:
+    ventes_par_canal = df.groupby("Canal de Distribution")["Montant Total (XOF)"].sum()
+    plt.figure(figsize=(8, 6))
+    ventes_par_canal.plot(kind='pie', autopct='%1.1f%%', startangle=90, colors=sns.color_palette("Set3"))
+    plt.title("Répartition des ventes par canal de distribution")
+    plt.ylabel("")
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/ventes_par_canal.png")
+    plt.show()
+
+# 💡 Insights
+produit_star = ventes_par_produit.idxmax()
+region_star = ventes_par_region.idxmax()
+mois_top = ventes_mensuelles.idxmax().strftime("%B %Y")
+
+with open(f"{output_dir}/insights.txt", "w", encoding="utf-8") as f:
+    f.write(f"🔎 Produit le plus vendu : {produit_star}\n")
+    f.write(f"🌍 Région la plus performante : {region_star}\n")
+    f.write(f"📅 Mois avec le plus gros chiffre d'affaires : {mois_top}\n")
